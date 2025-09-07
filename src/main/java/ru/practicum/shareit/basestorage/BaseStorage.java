@@ -1,8 +1,8 @@
 package ru.practicum.shareit.basestorage;
 
-import ru.practicum.shareit.Entity;
+import ru.practicum.shareit.BaseEntity;
 
-public interface BaseStorage<T extends Entity> {
+public interface BaseStorage<T extends BaseEntity> {
     T create(T element);
 
     T update(T newElement);
