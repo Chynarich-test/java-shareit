@@ -1,6 +1,6 @@
 package ru.practicum.shareit;
 
-public interface Entity {
+public interface BaseEntity {
     Long getId();
 
     void setId(Long id);

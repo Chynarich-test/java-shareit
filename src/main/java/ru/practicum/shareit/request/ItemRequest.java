@@ -1,15 +1,36 @@
 package ru.practicum.shareit.request;
 
-import lombok.Data;
-import ru.practicum.shareit.Entity;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import ru.practicum.shareit.BaseEntity;
+import ru.practicum.shareit.user.User;
 
 import java.time.LocalDateTime;
 
-@Data
-public class ItemRequest implements Entity {
-    private long id;
+@Builder
+@Entity
+@Table(name = "item_request", schema = "public")
+@Getter
+@Setter
+@ToString
+public class ItemRequest implements BaseEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    @NotBlank
+    @Column(name = "description", nullable = false)
     private String description;
-    private long requestor;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "requestor_id", nullable = false)
+    private User requestor;
+    @NotNull
+    @Column(name = "created", nullable = false)
     private LocalDateTime created;
 
     @Override
