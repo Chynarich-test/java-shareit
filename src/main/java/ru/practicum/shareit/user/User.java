@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
-import ru.practicum.shareit.BaseEntity;
+import ru.practicum.shareit.base.BaseEntity;
 
 
 @Builder

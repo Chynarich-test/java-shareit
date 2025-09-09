@@ -3,7 +3,7 @@ package ru.practicum.shareit.booking;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
-import ru.practicum.shareit.BaseEntity;
+import ru.practicum.shareit.base.BaseEntity;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.User;
 

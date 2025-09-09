@@ -1,9 +1,9 @@
 package ru.practicum.shareit.item.service;
 
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.Booking;
+import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.booking.dao.BookingRepository;
 import ru.practicum.shareit.booking.dto.BookingMapper;
 import ru.practicum.shareit.exception.NotFoundException;
@@ -21,6 +21,7 @@ import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.dao.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -42,7 +43,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemWithBookingsDto getItem(long id) {
-        Item item = getItemPrivate(id);
+        Item item = findById(id);
 
         List<CommentDto> commentDtos = commentRepository.findByItemId(id)
                 .stream()
@@ -57,7 +58,7 @@ public class ItemServiceImpl implements ItemService {
         );
     }
 
-    private Item getItemPrivate(long id) {
+    private Item findById(long id) {
         return itemRepository.findById(id).orElseThrow(() ->
                 new NotFoundException("Предмет не найден"));
 
@@ -76,7 +77,7 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public ItemDto updateItem(long itemId, long userId, ItemDto itemDto) {
-        Item existingItem = getItemPrivate(itemId);
+        Item existingItem = findById(itemId);
 
         if (!existingItem.getOwner().getId().equals(userId)) {
             throw new NotFoundException("Пользователь не является владельцем вещи");
@@ -98,7 +99,6 @@ public class ItemServiceImpl implements ItemService {
     }
 
 
-    //Мне, честно говоря, это вообще не нравится тут N+1, но в дополнительных советах ментора написано, что так и надо
     @Override
     public List<ItemWithBookingsDto> getAllItems(long userId) {
         List<Item> items = itemRepository.findAllByOwnerId(userId);
@@ -110,18 +110,31 @@ public class ItemServiceImpl implements ItemService {
                 .stream()
                 .collect(Collectors.groupingBy(c -> c.getItem().getId()));
 
+        List<Booking> allBookings = bookingRepository.findByItemIdInAndStatus(
+                itemIds,
+                BookingStatus.APPROVED
+        );
+
+        LocalDateTime now = LocalDateTime.now();
+
+        Map<Long, List<Booking>> pastBookingsByItem = allBookings.stream()
+                .filter(b -> b.getEnd().isBefore(now) || b.getEnd().isEqual(now))
+                .collect(Collectors.groupingBy(b -> b.getItem().getId()));
+
+        Map<Long, List<Booking>> futureBookingsByItem = allBookings.stream()
+                .filter(b -> b.getStart().isAfter(now))
+                .collect(Collectors.groupingBy(b -> b.getItem().getId()));
+
         return items.stream()
                 .map(item -> {
-                    Booking last = bookingRepository
-                            .findLastBooking(item.getId(), LocalDateTime.now(), PageRequest.of(0, 1))
+                    Booking last = pastBookingsByItem.getOrDefault(item.getId(), List.of())
                             .stream()
-                            .findFirst()
+                            .max(Comparator.comparing(Booking::getEnd))
                             .orElse(null);
 
-                    Booking next = bookingRepository
-                            .findNextBooking(item.getId(), LocalDateTime.now(), PageRequest.of(0, 1))
+                    Booking next = futureBookingsByItem.getOrDefault(item.getId(), List.of())
                             .stream()
-                            .findFirst()
+                            .min(Comparator.comparing(Booking::getStart))
                             .orElse(null);
 
                     List<CommentDto> commentDtos = commentsByItemId
@@ -146,7 +159,7 @@ public class ItemServiceImpl implements ItemService {
         }
 
         Comment comment = CommentMapper.toComment(commentDto);
-        comment.setItem(getItemPrivate(itemId));
+        comment.setItem(findById(itemId));
         comment.setAuthor(userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Комментарий написал несуществующий пользователь")));
         comment.setCreated(LocalDateTime.now());

@@ -7,7 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
-import ru.practicum.shareit.BaseEntity;
+import ru.practicum.shareit.base.BaseEntity;
 import ru.practicum.shareit.user.User;
 
 import java.time.LocalDateTime;

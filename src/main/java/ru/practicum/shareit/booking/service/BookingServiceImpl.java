@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-public class BookingServiceImpl implements BookingService {
+public class BookingServiceImpl {
     private final BookingRepository bookingRepository;
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
@@ -51,7 +51,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     public BookingDto confirmBooking(long bookingId, boolean status, long userId) {
-        Booking existingBook = privateGet(bookingId);
+        Booking existingBook = findById(bookingId);
 
         if (!existingBook.getItem().getOwner().getId().equals(userId)) {
             throw new ValidationException("Только владелец вещи может подтвердить бронирование");
@@ -63,7 +63,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     public BookingDto getBooking(long bookingId, long userId) {
-        Booking existingBook = privateGet(bookingId);
+        Booking existingBook = findById(bookingId);
 
         if (!existingBook.getBooker().getId().equals(userId)
                 && !existingBook.getItem().getOwner().getId().equals(userId)) {
@@ -79,12 +79,14 @@ public class BookingServiceImpl implements BookingService {
         List<Booking> booking;
 
         switch (status) {
-            case ALL -> booking = bookingRepository.findByBookerId(userId);
+            case ALL -> booking = bookingRepository.findByBookerIdOrderByStartDesc(userId);
             case CURRENT -> booking = bookingRepository.findByBookerIdAndCurrent(userId, LocalDateTime.now());
-            case PAST -> booking = bookingRepository.findByBookerIdAndEndPast(userId, LocalDateTime.now());
-            case FUTURE -> booking = bookingRepository.findByBookerIdAndStartFuture(userId, LocalDateTime.now());
+            case PAST ->
+                    booking = bookingRepository.findByBookerIdAndEndBeforeOrderByStartDesc(userId, LocalDateTime.now());
+            case FUTURE ->
+                    booking = bookingRepository.findByBookerIdAndStartAfterOrderByStartDesc(userId, LocalDateTime.now());
             case WAITING, REJECTED ->
-                    booking = bookingRepository.findByBookerIdAndStatus(userId, BookingStatus.valueOf(status.name()));
+                    booking = bookingRepository.findByBookerIdAndStatusIsOrderByStartDesc(userId, BookingStatus.valueOf(status.name()));
             default -> throw new NotFoundException("Неверные параметры запроса");
         }
 
@@ -97,19 +99,21 @@ public class BookingServiceImpl implements BookingService {
         List<Booking> booking;
 
         switch (status) {
-            case ALL -> booking = bookingRepository.findBookingForItemByUserId(userId);
+            case ALL -> booking = bookingRepository.findByItemOwnerIdOrderByStartDesc(userId);
             case CURRENT -> booking = bookingRepository.findBookingForItemByUserIdCurrent(userId, LocalDateTime.now());
-            case PAST -> booking = bookingRepository.findBookingForItemByUserIdPast(userId, LocalDateTime.now());
-            case FUTURE -> booking = bookingRepository.findBookingForItemByUserIdFuture(userId, LocalDateTime.now());
+            case PAST ->
+                    booking = bookingRepository.findByItemOwnerIdAndEndBeforeOrderByStartDesc(userId, LocalDateTime.now());
+            case FUTURE ->
+                    booking = bookingRepository.findByItemOwnerIdAndStartAfterOrderByStartDesc(userId, LocalDateTime.now());
             case WAITING, REJECTED ->
-                    booking = bookingRepository.findBookingForItemByUserIdStatus(userId, BookingStatus.valueOf(status.name()));
+                    booking = bookingRepository.findByItemOwnerIdAndStatusIsOrderByStartDesc(userId, BookingStatus.valueOf(status.name()));
             default -> throw new NotFoundException("Неверные параметры запроса");
         }
 
         return booking.stream().map(BookingMapper::toBookingDto).toList();
     }
 
-    private Booking privateGet(long bookingId) {
+    private Booking findById(long bookingId) {
         return bookingRepository.findById(bookingId).orElseThrow(() ->
                 new NotFoundException("Бронь не найдена"));
     }
