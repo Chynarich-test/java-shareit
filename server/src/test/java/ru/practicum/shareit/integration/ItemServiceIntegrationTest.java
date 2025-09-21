@@ -4,6 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import ru.practicum.shareit.booking.dto.BookingCreateDto;
 import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.comment.CommentDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -204,5 +206,65 @@ class ItemServiceIntegrationTest extends AbstractIntegrationTest {
         assertNotNull(createdComment.getId());
         assertEquals(commentDto.getText(), createdComment.getText());
         assertEquals(booker.getName(), createdComment.getAuthorName());
+    }
+
+    @Test
+    void updateItem_WhenUserIsNotOwner_ThrowsException() {
+        UserDto anotherUser = createTestUser("Другой пользователь", "another@example.com");
+        ItemCreateDto itemDto = createTestItemDto("Предмет владельца", "Описание", true);
+        ItemDto createdItem = itemService.crateItem(itemDto, owner.getId());
+
+        ItemDto updateDto = new ItemDto();
+        updateDto.setName("Попытка обновления");
+
+        assertThrows(NotFoundException.class,
+                () -> itemService.updateItem(createdItem.getId(), anotherUser.getId(), updateDto));
+    }
+
+    @Test
+    void getItem_WhenItemNotFound_ThrowsException() {
+        final long nonExistentItemId = 999L;
+        assertThrows(NotFoundException.class, () -> itemService.getItem(nonExistentItemId));
+    }
+
+    @Test
+    void crateItem_WhenUserNotFound_ThrowsException() {
+        final long nonExistentUserId = 999L;
+        ItemCreateDto itemDto = createTestItemDto("Предмет-призрак", "Описание", true);
+        assertThrows(NotFoundException.class, () -> itemService.crateItem(itemDto, nonExistentUserId));
+    }
+
+    @Test
+    void createComment_WhenUserHasNotBookedItem_ThrowsValidationException() {
+        UserDto randomUser = createTestUser("Случайный пользователь", "random@example.com");
+        ItemCreateDto itemDto = createTestItemDto("Предмет без аренды", "Описание", true);
+        ItemDto item = itemService.crateItem(itemDto, owner.getId());
+
+        CommentDto commentDto = new CommentDto();
+        commentDto.setText("Пытаюсь оставить комментарий");
+
+        assertThrows(ValidationException.class,
+                () -> itemService.createComment(item.getId(), randomUser.getId(), commentDto));
+    }
+
+    @Test
+    void createComment_WhenBookingIsInFuture_ThrowsValidationException() {
+        UserDto booker = createTestUser("Будущий арендатор", "futurebooker@example.com");
+        ItemCreateDto itemDto = createTestItemDto("Предмет для будущей аренды", "Описание", true);
+        ItemDto item = itemService.crateItem(itemDto, owner.getId());
+
+        BookingCreateDto bookingDto = createTestBookingDto(
+                item.getId(),
+                LocalDateTime.now().plusDays(1),
+                LocalDateTime.now().plusDays(2)
+        );
+        BookingDto booking = bookingService.create(bookingDto, booker.getId());
+        bookingService.confirmBooking(booking.getId(), true, owner.getId());
+
+        CommentDto commentDto = new CommentDto();
+        commentDto.setText("Комментарий из будущего");
+
+        assertThrows(ValidationException.class,
+                () -> itemService.createComment(item.getId(), booker.getId(), commentDto));
     }
 }

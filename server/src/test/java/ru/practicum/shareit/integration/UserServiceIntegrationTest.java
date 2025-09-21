@@ -76,4 +76,40 @@ class UserServiceIntegrationTest extends AbstractIntegrationTest {
 
         assertThrows(ExistException.class, () -> userService.createUser(duplicateUser));
     }
+
+    @Test
+    void updateUser_UserNotFound_ThrowsException() {
+        UserDto updateDto = new UserDto();
+        updateDto.setName("Призрак");
+        updateDto.setEmail("ghost@example.com");
+
+        final long nonExistentUserId = 999L;
+
+        assertThrows(NotFoundException.class, () -> userService.updateUser(nonExistentUserId, updateDto));
+    }
+
+    @Test
+    void updateUser_DuplicateEmail_ThrowsException() {
+        createTestUser("Пользователь 1", "existing.email@example.com");
+        UserDto userToUpdate = createTestUser("Пользователь 2", "another.email@example.com");
+
+        UserDto updateDto = new UserDto();
+        updateDto.setEmail("existing.email@example.com");
+
+        assertThrows(ExistException.class, () -> userService.updateUser(userToUpdate.getId(), updateDto));
+    }
+
+    @Test
+    void updateUser_WithSameEmail_Success() {
+        UserDto userDto = createTestUser("Исходный пользователь", "same.email@example.com");
+
+        UserDto updateDto = new UserDto();
+        updateDto.setName("Имя обновлено");
+        updateDto.setEmail("same.email@example.com");
+
+        UserDto updatedUser = userService.updateUser(userDto.getId(), updateDto);
+
+        assertEquals("Имя обновлено", updatedUser.getName());
+        assertEquals("same.email@example.com", updatedUser.getEmail());
+    }
 }

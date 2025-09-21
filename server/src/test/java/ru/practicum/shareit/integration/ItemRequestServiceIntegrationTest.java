@@ -2,6 +2,7 @@ package ru.practicum.shareit.integration;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.user.dto.UserDto;
 
@@ -60,5 +61,50 @@ class ItemRequestServiceIntegrationTest extends AbstractIntegrationTest {
 
         assertFalse(otherRequests.isEmpty());
         assertEquals(request.getDescription(), otherRequests.get(0).getDescription());
+    }
+
+    @Test
+    void getRequestById_WhenRequestNotFound_ThrowsException() {
+        final long nonExistentRequestId = 999L;
+        assertThrows(Exception.class,
+                () -> itemRequestService.getRequestById(nonExistentRequestId, requester.getId()));
+    }
+
+    @Test
+    void getRequestById_WithItems_Success() {
+        ItemRequestDto requestDto = createTestItemRequestDto("Нужна отвертка");
+        ItemRequestDto createdRequest = itemRequestService.create(requestDto, requester.getId());
+
+        UserDto owner = createTestUser("Владелец", "owner.req@example.com");
+        ItemCreateDto itemDto = createTestItemDto("Отвертка крестовая", "Отличная отвертка", true);
+        itemDto.setRequestId(createdRequest.getId());
+        itemService.crateItem(itemDto, owner.getId());
+
+        ItemRequestDto retrievedRequest = itemRequestService.getRequestById(createdRequest.getId(), requester.getId());
+
+        assertFalse(retrievedRequest.getItems().isEmpty());
+        assertEquals(1, retrievedRequest.getItems().size());
+        assertEquals("Отвертка крестовая", retrievedRequest.getItems().get(0).getName());
+    }
+
+    @Test
+    void getOwnRequests_WhenNoRequests_ReturnsEmptyList() {
+        UserDto newUser = createTestUser("Новый пользователь", "new.user@example.com");
+
+        List<ItemRequestDto> ownRequests = itemRequestService.getOwnRequests(newUser.getId());
+
+        assertNotNull(ownRequests);
+        assertTrue(ownRequests.isEmpty());
+    }
+
+    @Test
+    void getOtherUsersRequests_WhenNoOtherRequests_ReturnsEmptyList() {
+        ItemRequestDto requestDto = createTestItemRequestDto("Единственный запрос");
+        itemRequestService.create(requestDto, requester.getId());
+
+        List<ItemRequestDto> otherRequests = itemRequestService.getOtherUsersRequests(requester.getId());
+
+        assertNotNull(otherRequests);
+        assertTrue(otherRequests.isEmpty());
     }
 }

@@ -178,4 +178,50 @@ class BookingServiceIntegrationTest extends AbstractIntegrationTest {
         assertThrows(NotFoundException.class,
                 () -> bookingService.getBooking(createdBooking.getId(), randomUser.getId()));
     }
+
+    @Test
+    void getAllBooking_ForPastState_Success() {
+        BookingCreateDto pastBookingDto = createTestBookingDto(
+                item.getId(),
+                now.minusDays(5),
+                now.minusDays(4)
+        );
+        BookingDto createdBooking = bookingService.create(pastBookingDto, booker.getId());
+
+        bookingService.confirmBooking(createdBooking.getId(), true, owner.getId());
+
+        try {
+            Thread.sleep(10);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        List<BookingDto> pastBookings = bookingService.getAllBooking(booker.getId(), BookingRequestType.PAST, 0, 10);
+        assertFalse(pastBookings.isEmpty());
+        assertEquals(1, pastBookings.size());
+        assertEquals(createdBooking.getId(), pastBookings.get(0).getId());
+    }
+
+    @Test
+    void getAllBooking_ForCurrentState_Success() {
+        BookingCreateDto currentBookingDto = createTestBookingDto(
+                item.getId(),
+                now.minusDays(1),
+                now.plusDays(1)
+        );
+        BookingDto createdBooking = bookingService.create(currentBookingDto, booker.getId());
+        bookingService.confirmBooking(createdBooking.getId(), true, owner.getId());
+
+        List<BookingDto> currentBookings = bookingService.getAllBooking(booker.getId(), BookingRequestType.CURRENT, 0, 10);
+        assertFalse(currentBookings.isEmpty());
+        assertEquals(1, currentBookings.size());
+        assertEquals(createdBooking.getId(), currentBookings.get(0).getId());
+    }
+
+    @Test
+    void getAllBooking_ForNonExistentUser_ThrowsNotFoundException() {
+        long nonExistentUserId = 999L;
+        assertThrows(NotFoundException.class,
+                () -> bookingService.getAllBooking(nonExistentUserId, BookingRequestType.ALL, 0, 10));
+    }
 }
