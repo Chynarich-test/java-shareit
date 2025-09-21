@@ -84,7 +84,7 @@ class BookingServiceIntegrationTest extends AbstractIntegrationTest {
         bookingService.create(booking2, booker.getId());
 
         List<BookingDto> bookings = bookingService.getAllBooking(booker.getId(), BookingRequestType.ALL, 0, 10);
-        
+
         assertEquals(2, bookings.size());
     }
 
@@ -99,7 +99,7 @@ class BookingServiceIntegrationTest extends AbstractIntegrationTest {
         bookingService.create(bookingDto, booker.getId());
 
         List<BookingDto> ownerBookings = bookingService.getAllItemsBookings(owner.getId(), BookingRequestType.ALL);
-        
+
         assertEquals(1, ownerBookings.size());
         assertEquals(item.getId(), ownerBookings.get(0).getItem().getId());
     }

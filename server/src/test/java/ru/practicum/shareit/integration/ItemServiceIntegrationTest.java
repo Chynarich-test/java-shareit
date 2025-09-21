@@ -80,7 +80,7 @@ class ItemServiceIntegrationTest extends AbstractIntegrationTest {
         itemService.crateItem(item2, owner.getId());
 
         List<ItemDto> searchResults = itemService.searchItems("поиск", 0, 10);
-        
+
         assertEquals(2, searchResults.size());
     }
 

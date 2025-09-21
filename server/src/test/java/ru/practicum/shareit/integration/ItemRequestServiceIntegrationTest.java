@@ -53,11 +53,11 @@ class ItemRequestServiceIntegrationTest extends AbstractIntegrationTest {
     void getOtherUsersRequests_Success() {
         UserDto otherUser = createTestUser("другой пользователь", "other@example.com");
         ItemRequestDto request = createTestItemRequestDto("тестовый запрос");
-        
+
         itemRequestService.create(request, requester.getId());
 
         List<ItemRequestDto> otherRequests = itemRequestService.getOtherUsersRequests(otherUser.getId());
-        
+
         assertFalse(otherRequests.isEmpty());
         assertEquals(request.getDescription(), otherRequests.get(0).getDescription());
     }

@@ -41,7 +41,7 @@ class UserServiceIntegrationTest extends AbstractIntegrationTest {
     @Test
     void deleteUser_Success() {
         UserDto userDto = createTestUser("Удаляемый пользователь", "delete@example.com");
-        
+
         userService.deleteUser(userDto.getId());
 
         assertThrows(NotFoundException.class, () -> userService.getUser(userDto.getId()));
@@ -53,14 +53,14 @@ class UserServiceIntegrationTest extends AbstractIntegrationTest {
 
         UserDto nameUpdateDto = new UserDto();
         nameUpdateDto.setName("Новое имя");
-        
+
         UserDto nameUpdated = userService.updateUser(userDto.getId(), nameUpdateDto);
         assertEquals("Новое имя", nameUpdated.getName());
         assertEquals("original@example.com", nameUpdated.getEmail());
 
         UserDto emailUpdateDto = new UserDto();
         emailUpdateDto.setEmail("new@example.com");
-        
+
         UserDto emailUpdated = userService.updateUser(userDto.getId(), emailUpdateDto);
         assertEquals("Новое имя", emailUpdated.getName());
         assertEquals("new@example.com", emailUpdated.getEmail());
@@ -69,7 +69,7 @@ class UserServiceIntegrationTest extends AbstractIntegrationTest {
     @Test
     void createUser_DuplicateEmail_ThrowsException() {
         createTestUser("Первый пользователь", "duplicate@example.com");
-        
+
         final UserDto duplicateUser = new UserDto();
         duplicateUser.setName("Второй пользователь");
         duplicateUser.setEmail("duplicate@example.com");
