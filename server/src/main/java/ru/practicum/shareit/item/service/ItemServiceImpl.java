@@ -174,6 +174,7 @@ public class ItemServiceImpl implements ItemService {
                 .toList();
     }
 
+    @Override
     public CommentDto createComment(long itemId, long userId, CommentDto commentDto) {
         if (!bookingRepository.userCanCreateComment(userId, itemId, LocalDateTime.now())) {
             throw new ValidationException("Пользователь не пользовался данной вещью");
