@@ -6,6 +6,8 @@ import ru.practicum.shareit.booking.BookingRequestType;
 import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.booking.dto.BookingCreateDto;
 import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.user.dto.UserDto;
@@ -13,8 +15,7 @@ import ru.practicum.shareit.user.dto.UserDto;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 class BookingServiceIntegrationTest extends AbstractIntegrationTest {
 
@@ -102,5 +103,79 @@ class BookingServiceIntegrationTest extends AbstractIntegrationTest {
 
         assertEquals(1, ownerBookings.size());
         assertEquals(item.getId(), ownerBookings.get(0).getItem().getId());
+    }
+
+    @Test
+    void createBooking_ItemNotAvailable_ThrowsException() {
+        ItemCreateDto itemDto = createTestItemDto("Недоступный предмет", "Описание", false);
+        ItemDto unavailableItem = itemService.crateItem(itemDto, owner.getId());
+
+        BookingCreateDto bookingDto = createTestBookingDto(
+                unavailableItem.getId(),
+                now.plusDays(1),
+                now.plusDays(2)
+        );
+
+        assertThrows(ValidationException.class, () -> bookingService.create(bookingDto, booker.getId()));
+    }
+
+
+    @Test
+    void confirmBooking_NotByOwner_ThrowsException() {
+        BookingCreateDto bookingDto = createTestBookingDto(
+                item.getId(),
+                now.plusDays(1),
+                now.plusDays(2)
+        );
+
+        BookingDto createdBooking = bookingService.create(bookingDto, booker.getId());
+
+        UserDto randomUser = createTestUser("Случайный", "random@example.com");
+        assertThrows(ValidationException.class,
+                () -> bookingService.confirmBooking(createdBooking.getId(), true, randomUser.getId()));
+    }
+
+    @Test
+    void getAllBooking_DifferentStates_Success() {
+        BookingCreateDto futureBooking = createTestBookingDto(
+                item.getId(),
+                now.plusDays(1),
+                now.plusDays(2)
+        );
+        bookingService.create(futureBooking, booker.getId());
+
+        List<BookingDto> futureBookings = bookingService.getAllBooking(
+                booker.getId(), BookingRequestType.FUTURE, 0, 10);
+        assertEquals(1, futureBookings.size());
+
+        List<BookingDto> waitingBookings = bookingService.getAllBooking(
+                booker.getId(), BookingRequestType.WAITING, 0, 10);
+        assertEquals(1, waitingBookings.size());
+
+        BookingDto toReject = bookingService.create(createTestBookingDto(
+                item.getId(),
+                now.plusDays(3),
+                now.plusDays(4)
+        ), booker.getId());
+        bookingService.confirmBooking(toReject.getId(), false, owner.getId());
+
+        List<BookingDto> rejectedBookings = bookingService.getAllBooking(
+                booker.getId(), BookingRequestType.REJECTED, 0, 10);
+        assertEquals(1, rejectedBookings.size());
+    }
+
+    @Test
+    void getBooking_ByNotOwnerOrBooker_ThrowsException() {
+        BookingCreateDto bookingDto = createTestBookingDto(
+                item.getId(),
+                now.plusDays(1),
+                now.plusDays(2)
+        );
+
+        BookingDto createdBooking = bookingService.create(bookingDto, booker.getId());
+        UserDto randomUser = createTestUser("Случайный", "random@example.com");
+
+        assertThrows(NotFoundException.class,
+                () -> bookingService.getBooking(createdBooking.getId(), randomUser.getId()));
     }
 }
