@@ -8,6 +8,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.practicum.shareit.base.AppConstants;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 
 import java.util.Collections;
@@ -22,8 +23,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = ItemRequestController.class)
 class ItemRequestControllerTest {
-
-    private static final String USER_ID_HEADER = "X-Sharer-User-Id";
 
     @Autowired
     private ObjectMapper mapper;
@@ -42,7 +41,7 @@ class ItemRequestControllerTest {
                 .thenReturn(ResponseEntity.ok(Map.of("id", 1L)));
 
         mvc.perform(post("/requests")
-                        .header(USER_ID_HEADER, 1L)
+                        .header(AppConstants.USER_ID_HEADER, 1L)
                         .content(mapper.writeValueAsString(requestDto))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
@@ -54,7 +53,7 @@ class ItemRequestControllerTest {
                 .thenReturn(ResponseEntity.ok(Collections.emptyList()));
 
         mvc.perform(get("/requests")
-                        .header(USER_ID_HEADER, 1L))
+                        .header(AppConstants.USER_ID_HEADER, 1L))
                 .andExpect(status().isOk());
     }
 
@@ -64,7 +63,7 @@ class ItemRequestControllerTest {
                 .thenReturn(ResponseEntity.ok(Collections.emptyList()));
 
         mvc.perform(get("/requests/all")
-                        .header(USER_ID_HEADER, 1L))
+                        .header(AppConstants.USER_ID_HEADER, 1L))
                 .andExpect(status().isOk());
     }
 
@@ -75,7 +74,7 @@ class ItemRequestControllerTest {
                 .thenReturn(ResponseEntity.ok(Map.of("id", requestId)));
 
         mvc.perform(get("/requests/{requestId}", requestId)
-                        .header(USER_ID_HEADER, 1L))
+                        .header(AppConstants.USER_ID_HEADER, 1L))
                 .andExpect(status().isOk());
     }
 }

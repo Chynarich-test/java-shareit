@@ -8,6 +8,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.practicum.shareit.base.AppConstants;
 import ru.practicum.shareit.item.comment.CommentDto;
 import ru.practicum.shareit.item.dto.ItemCreateDto;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -22,8 +23,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = ItemController.class)
 class ItemControllerTest {
-
-    private static final String USER_ID_HEADER = "X-Sharer-User-Id";
 
     @Autowired
     private ObjectMapper mapper;
@@ -49,7 +48,7 @@ class ItemControllerTest {
                 .thenReturn(ResponseEntity.ok(Collections.emptyList()));
 
         mvc.perform(get("/items")
-                        .header(USER_ID_HEADER, 1L)
+                        .header(AppConstants.USER_ID_HEADER, 1L)
                         .param("from", "0")
                         .param("size", "10"))
                 .andExpect(status().isOk());
@@ -77,7 +76,7 @@ class ItemControllerTest {
                 .thenReturn(ResponseEntity.ok(itemDto));
 
         mvc.perform(patch("/items/{itemId}", 1L)
-                        .header(USER_ID_HEADER, 1L)
+                        .header(AppConstants.USER_ID_HEADER, 1L)
                         .content(mapper.writeValueAsString(itemDto))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
@@ -90,7 +89,7 @@ class ItemControllerTest {
                 .thenReturn(ResponseEntity.ok(Map.of("id", 1L)));
 
         mvc.perform(post("/items")
-                        .header(USER_ID_HEADER, 1L)
+                        .header(AppConstants.USER_ID_HEADER, 1L)
                         .content(mapper.writeValueAsString(createDto))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
@@ -104,7 +103,7 @@ class ItemControllerTest {
                 .thenReturn(ResponseEntity.ok(Map.of("id", 1L)));
 
         mvc.perform(post("/items/{itemId}/comment", 1L)
-                        .header(USER_ID_HEADER, 1L)
+                        .header(AppConstants.USER_ID_HEADER, 1L)
                         .content(mapper.writeValueAsString(commentDto))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());

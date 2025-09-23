@@ -8,6 +8,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.practicum.shareit.base.AppConstants;
 import ru.practicum.shareit.booking.dto.BookingCreateDto;
 import ru.practicum.shareit.booking.dto.BookingState;
 
@@ -23,8 +24,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = BookingController.class)
 class BookingControllerTest {
-
-    private static final String USER_ID_HEADER = "X-Sharer-User-Id";
     @Autowired
     ObjectMapper mapper;
     @MockBean
@@ -42,7 +41,7 @@ class BookingControllerTest {
                 .thenReturn(ResponseEntity.ok(Map.of("id", 1)));
 
         mvc.perform(post("/bookings")
-                        .header(USER_ID_HEADER, 1)
+                        .header(AppConstants.USER_ID_HEADER, 1)
                         .content(mapper.writeValueAsString(createDto))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
@@ -54,7 +53,7 @@ class BookingControllerTest {
                 .thenReturn(ResponseEntity.ok(Map.of("bookings", "[]")));
 
         mvc.perform(get("/bookings")
-                        .header(USER_ID_HEADER, 1)
+                        .header(AppConstants.USER_ID_HEADER, 1)
                         .param("state", "ALL")
                         .param("from", "0")
                         .param("size", "10"))

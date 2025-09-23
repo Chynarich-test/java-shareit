@@ -63,11 +63,9 @@ public class ItemRequestServiceImpl implements ItemRequestService {
         ItemRequestDto itemRequestDto = ItemRequestMapper.toDto(itemRequestRepository.getReferenceById(requestId));
 
         List<Item> answers = itemRepository.findByRequestId(requestId);
-        System.out.println(answers.size());
 
         itemRequestDto.setItems(answers.stream().map(ItemMapper::toItemAnswerDto).toList());
 
         return itemRequestDto;
-
     }
 }

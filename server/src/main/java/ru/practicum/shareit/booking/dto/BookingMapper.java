@@ -14,7 +14,7 @@ public class BookingMapper {
                 .end(booking.getEnd())
                 .status(booking.getStatus())
                 .booker(booking.getBooker() == null ? null :
-                        BookerDto.builder()
+                        BookingDto.BookerDto.builder()
                                 .id(booking.getBooker().getId())
                                 .build())
                 .item(booking.getItem() == null ? null :
